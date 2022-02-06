@@ -1,41 +1,53 @@
 # XV6-Threads
-Fall 2021 - Operating systems final project - Adding kernel threads to xv6
+Fall 2021 - Operating systems final project - Adding kernel threads to xv6 (project 4b)
 
-Overview
-In this project, you'll be adding real kernel threads to xv6. Sound like fun? Well, it should. Because you are on your way to becoming a real kernel hacker. And what could be more fun than that?
+xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
+Version 6 (v6).  xv6 loosely follows the structure and style of v6,
+but is implemented for a modern x86-based multiprocessor using ANSI C.
 
-Specifically, you'll add four new system calls:
+ACKNOWLEDGMENTS
 
-int clone(void *stack)
-int lock(int *l)
-int unlock(int *l)
-int join()
-You'll also add one user-space function that wraps clone() for convenience:
+xv6 is inspired by John Lions's Commentary on UNIX 6th Edition (Peer
+to Peer Communications; ISBN: 1-57398-013-7; 1st edition (June 14,
+2000)). See also http://pdos.csail.mit.edu/6.828/2012/v6.html, which
+provides pointers to on-line resources for v6.
 
-int thread_create(void (*fn) (void *), void *arg)
-You'll also have to modify some existing system calls, such as wait().
+xv6 borrows code from the following sources:
+    JOS (asm.h, elf.h, mmu.h, bootasm.S, ide.c, console.c, and others)
+    Plan 9 (entryother.S, mp.h, mp.c, lapic.c)
+    FreeBSD (ioapic.c)
+    NetBSD (console.c)
 
-Note: Start with a clean kernel; no need for your new fancy address space with the stack at the bottom, for example.
+The following people have made contributions:
+    Russ Cox (context switching, locking)
+    Cliff Frey (MP)
+    Xiao Yu (MP)
+    Nickolai Zeldovich
+    Austin Clements
 
-Details
-Each new function returns -1 on failure. The locking functions (lock and unlock) return 0 on success, and the other three (clone, join, and thread_create) return a thread ID.
+In addition, we are grateful for the patches contributed by Greg
+Price, Yandong Mao, and Hitoshi Mitake.
 
-Getting clone working is the first step, and will probably take the most time. This call should behave very much like fork, except that instead of copying the address space to a new page directory, clone initializes the new process so that the new process and cloned process use the same page directory. Thus, memory will be shared, and the two "processes" are really actually threads.
+The code in the files that constitute xv6 is
+Copyright 2006-2012 Frans Kaashoek, Robert Morris, and Russ Cox.
 
-Although the two threads will share the same address space, they each need their own stack; the cloned process allocates space for this, probably with malloc. Suppose thread T1 is making a clone of itself, T2. T1 will first allocate a 1-page piece of page-aligned memory and pass a pointer to that memory to the clone system call. The clone system call will then copy T1's stack to that location, and update T2's stack and base registers to use the new stack. It's admittedly a bit strange to allocate T2's stack in a heap object allocated by T1 in this way, but the alternative would be to integrate with p3b (relocated stacks), and that would require you to do much more work.
+ERROR REPORTS
 
-The thread_create function wraps clone, and takes a function pointer and thread argument as arguments. This call should do the following:
+If you spot errors or have suggestions for improvement, please send
+email to Frans Kaashoek and Robert Morris (kaashoek,rtm@csail.mit.edu). 
 
-allocate page-aligned space for the new stack
-call clone, returning the thread ID to the parent
-in the child, thread_create should call the function pointer, passing it the provided argument
-when the provided function returns, thread_create should free the stack and call exit
-Note that functions passed to thread_create should not quit by exiting; they should quit by returning. Otherwise, thread_create will not have an opportunity to free the space used for the stack.
+BUILDING AND RUNNING XV6
 
-Another new system call is int join(void), which is very similar to the already existing int wait(void) call; join waits for a thread child to finish, and wait waits for a process child to finish.
+To build xv6 on an x86 ELF machine (like Linux or FreeBSD), run "make".
+On non-x86 or non-ELF machines (like OS X, even on x86), you will
+need to install a cross-compiler gcc suite capable of producing x86 ELF
+binaries.  See http://pdos.csail.mit.edu/6.828/2012/tools.html.
+Then run "make TOOLPREFIX=i386-jos-elf-".
 
-The lock and unlock calls should have the normal behavior. Any code using these calls should initialize the lock variable to 0. Internally, a thread waiting on lock should go to sleep rather than spin.
+To run xv6, you can use the Bochs or QEMU PC simulators. Bochs makes
+debugging easier, but QEMU is much faster. To run in Bochs, run "make
+bochs" and then type "c" at the bochs prompt. To run in QEMU, run
+"make qemu".
 
-To test your code, use the TAs tests, as usual! But of course you should write your own little code snippets to test pieces as you go.
-
-Have fun!
+To create a typeset version of the code, run "make xv6.pdf".  This
+requires the "mpage" utility.  See http://www.mesa.nl/pub/mpage/.
